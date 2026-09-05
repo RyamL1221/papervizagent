@@ -476,10 +476,14 @@ async def call_openai_image_generation_with_retry_async(
     quality = config.get("quality", "high")
     background = config.get("background", "opaque")
     output_format = config.get("output_format", "png")
-    
+
+    # When Azure is active and an image deployment is configured, route through
+    # the deployment name; otherwise fall back to the raw model name.
+    effective_image_model = AZURE_IMAGE_DEPLOYMENT if USE_AZURE_OPENAI and AZURE_IMAGE_DEPLOYMENT else model_name
+
     # Base parameters for all models
     gen_params = {
-        "model": model_name,
+        "model": effective_image_model,
         "prompt": prompt,
         "n": 1,
         "size": size,
@@ -508,7 +512,7 @@ async def call_openai_image_generation_with_retry_async(
         except Exception as e:
             context_msg = f" for {error_context}" if error_context else ""
             print(
-                f"Attempt {attempt + 1} for OpenAI image generation model {model_name} failed{context_msg}: {e}. Retrying in {retry_delay} seconds..."
+                f"Attempt {attempt + 1} for OpenAI image generation model {effective_image_model} failed{context_msg}: {e}. Retrying in {retry_delay} seconds..."
             )
 
             if attempt < max_attempts - 1:
