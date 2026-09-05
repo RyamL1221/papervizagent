@@ -31,6 +31,19 @@ api_keys:
   openai_api_key: ""
   anthropic_api_key: ""
   
+# Azure OpenAI settings (optional; off by default)
+# When enabled, OpenAI calls are routed through an Azure OpenAI resource
+# instead of the standard OpenAI API. Leave use_azure: false to keep the
+# default behavior. All fields default to empty and are only read when
+# use_azure is true.
+azure_openai:
+  use_azure: false          # when true, route OpenAI calls through Azure
+  api_key: ""               # Azure OpenAI API key
+  endpoint: ""              # e.g. "https://my-resource.openai.azure.com/"
+  api_version: ""           # e.g. "2024-10-21"
+  chat_deployment: ""       # Azure deployment name for text/chat model
+  image_deployment: ""      # Azure deployment name for image model
+
 # Anthropic Vertex Settings (if you want to use Anthropic via Vertex)
 anthropic:
   region: "us-central1"
