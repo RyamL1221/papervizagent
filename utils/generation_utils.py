@@ -390,6 +390,10 @@ async def call_openai_with_retry_async(
     max_completion_tokens = config["max_completion_tokens"]
     response_text_list = []
 
+    # When Azure is active and a chat deployment is configured, route through
+    # the deployment name; otherwise fall back to the raw model name.
+    effective_model = AZURE_CHAT_DEPLOYMENT if USE_AZURE_OPENAI and AZURE_CHAT_DEPLOYMENT else model_name
+
     # --- Preparation Phase ---
     # Convert to the OpenAI-specific format
     current_contents = contents
@@ -402,7 +406,7 @@ async def call_openai_with_retry_async(
             openai_contents = _convert_to_openai_format(current_contents)
             # Attempt to generate the very first candidate.
             first_response = await openai_client.chat.completions.create(
-                model=model_name,
+                model=effective_model,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": openai_contents}
@@ -440,7 +444,7 @@ async def call_openai_with_retry_async(
         valid_openai_contents = _convert_to_openai_format(current_contents)
         tasks = [
             openai_client.chat.completions.create(
-                model=model_name,
+                model=effective_model,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": valid_openai_contents}
