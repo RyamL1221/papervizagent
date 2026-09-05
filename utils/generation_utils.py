@@ -90,6 +90,41 @@ except Exception as e:
     openai_client = None
 
 
+def _str_to_bool(val):
+    """Convert an env-var/config string to a boolean. Accepts real bools too."""
+    if isinstance(val, bool):
+        return val
+    if val is None:
+        return False
+    return str(val).strip().lower() in ("1", "true", "yes", "on")
+
+
+# --- Azure OpenAI settings resolution (optional; off by default) ---
+# Each field follows the same env-var-first, then-YAML precedence used for
+# every other provider. No client is initialized here; these values are only
+# consumed by the OpenAI/Azure call paths.
+azure_openai_api_key = get_config_val("azure_openai", "api_key", "AZURE_OPENAI_API_KEY", "")
+azure_openai_endpoint = get_config_val("azure_openai", "endpoint", "AZURE_OPENAI_ENDPOINT", "")
+azure_openai_api_version = get_config_val("azure_openai", "api_version", "AZURE_OPENAI_API_VERSION", "")
+azure_openai_chat_deployment = get_config_val("azure_openai", "chat_deployment", "AZURE_OPENAI_CHAT_DEPLOYMENT", "")
+azure_openai_image_deployment = get_config_val("azure_openai", "image_deployment", "AZURE_OPENAI_IMAGE_DEPLOYMENT", "")
+
+# use_azure resolves to True when the explicit flag is set, OR when endpoint,
+# api_key, and api_version are all present. False otherwise (including when
+# only some of the three are set).
+_azure_use_flag = _str_to_bool(get_config_val("azure_openai", "use_azure", "AZURE_OPENAI_USE", ""))
+azure_openai_use = _azure_use_flag or bool(
+    azure_openai_endpoint and azure_openai_api_key and azure_openai_api_version
+)
+
+# Never log the resolved API key value; reference by presence only.
+print(
+    f"DEBUG: Azure OpenAI enabled: {azure_openai_use} "
+    f"(api key: {'[set]' if azure_openai_api_key else '[not set]'}, "
+    f"endpoint: {'[set]' if azure_openai_endpoint else '[not set]'})"
+)
+
+
 
 def _convert_to_gemini_parts(contents: List[Dict[str, Any]]) -> List[types.Part]:
     """
