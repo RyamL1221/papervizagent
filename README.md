@@ -40,6 +40,38 @@ cd PaperVizAgent
 PaperVizAgent supports configuring API keys and Google Cloud settings via environment variables OR a YAML configuration file. 
 You can duplicate the `configs/model_config.template.yaml` file into `configs/model_config.yaml` to externalize all user configurations. This file is ignored by git to keep your api keys and configurations secret.
 
+#### Azure OpenAI (optional)
+Azure OpenAI is fully optional and **off by default**. If you provide no Azure configuration, nothing changes — the app uses public OpenAI exactly as before.
+
+When enabled, OpenAI chat and image calls are routed through your Azure OpenAI resource instead of the public OpenAI API.
+
+You can configure it in `configs/model_config.yaml`:
+
+```yaml
+azure_openai:
+  use_azure: false          # when true, route OpenAI calls through Azure
+  api_key: ""               # Azure OpenAI API key
+  endpoint: ""              # e.g. "https://my-resource.openai.azure.com/"
+  api_version: ""           # e.g. "2024-10-21"
+  chat_deployment: ""       # Azure deployment name for text/chat model
+  image_deployment: ""      # Azure deployment name for image model
+```
+
+Or via environment variables (which take precedence over the YAML values):
+
+```bash
+export AZURE_OPENAI_USE="true"                                  # enable Azure routing
+export AZURE_OPENAI_API_KEY="your_azure_openai_api_key"
+export AZURE_OPENAI_ENDPOINT="https://my-resource.openai.azure.com/"
+export AZURE_OPENAI_API_VERSION="2024-10-21"
+export AZURE_OPENAI_CHAT_DEPLOYMENT="your_chat_deployment_name"
+export AZURE_OPENAI_IMAGE_DEPLOYMENT="your_image_deployment_name"
+```
+
+**Activation rule:** Azure is used if `use_azure` / `AZURE_OPENAI_USE` is true, **or** if `endpoint`, `api_key`, and `api_version` are all set. Otherwise the public OpenAI path is used.
+
+**Important — deployment names are sent as the model:** When Azure is active, the configured deployment name is passed to the API as the `model` (this is how Azure OpenAI works), not the regular model name. So `chat_deployment` and `image_deployment` must match real deployment names in your Azure resource. If a deployment name is left empty, the corresponding `model_name` / `image_model_name` is used as a fallback.
+
 ### Downloading the Dataset
 *PaperBananaBench dataset will be released shortly.* 
 Once available, you will place it under the `data` directory (e.g., `data/PaperBananaBench/`). The framework is designed to function gracefully without the dataset by bypassing the Retriever Agent's few-shot learning capability.

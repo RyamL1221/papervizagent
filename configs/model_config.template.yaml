@@ -33,9 +33,11 @@ api_keys:
   
 # Azure OpenAI settings (optional; off by default)
 # When enabled, OpenAI calls are routed through an Azure OpenAI resource
-# instead of the standard OpenAI API. Leave use_azure: false to keep the
-# default behavior. All fields default to empty and are only read when
-# use_azure is true.
+# instead of the standard OpenAI API. Leave everything empty/false to keep the
+# default behavior. Azure is used if use_azure is true, OR if endpoint, api_key,
+# and api_version are all set. When active, the deployment name is sent as the
+# "model" to the API (model_name/image_model_name are used only as a fallback
+# when a deployment name is empty).
 azure_openai:
   use_azure: false          # when true, route OpenAI calls through Azure
   api_key: ""               # Azure OpenAI API key
