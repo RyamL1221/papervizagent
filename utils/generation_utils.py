@@ -29,7 +29,7 @@ from PIL import Image
 from google import genai
 from google.genai import types
 from anthropic import AsyncAnthropicVertex
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, AsyncAzureOpenAI
 
 import os
 
@@ -79,15 +79,7 @@ except Exception as e:
     print(f"Warning: Could not initialize Anthropic Vertex Client: {e}")
     anthropic_client = None
 
-try:
-    openai_api_key = get_config_val("api_keys", "openai_api_key", "OPENAI_API_KEY", "")
-    if openai_api_key:
-        openai_client = AsyncOpenAI(api_key=openai_api_key)
-    else:
-        openai_client = AsyncOpenAI() # Will try to fall back to ENV implicitly
-except Exception as e:
-    print(f"Warning: Could not initialize OpenAI Client: {e}")
-    openai_client = None
+openai_api_key = get_config_val("api_keys", "openai_api_key", "OPENAI_API_KEY", "")
 
 
 def _str_to_bool(val):
@@ -123,6 +115,31 @@ print(
     f"(api key: {'[set]' if azure_openai_api_key else '[not set]'}, "
     f"endpoint: {'[set]' if azure_openai_endpoint else '[not set]'})"
 )
+
+# Module-level flag and deployment constants for downstream call sites
+# (Subtasks 4-5) to reference without re-deriving anything.
+USE_AZURE_OPENAI = azure_openai_use
+AZURE_CHAT_DEPLOYMENT = azure_openai_chat_deployment
+AZURE_IMAGE_DEPLOYMENT = azure_openai_image_deployment
+
+# Initialize the OpenAI client. When Azure is enabled, route through
+# AsyncAzureOpenAI; otherwise preserve the original AsyncOpenAI behavior.
+try:
+    if USE_AZURE_OPENAI:
+        openai_client = AsyncAzureOpenAI(
+            api_key=azure_openai_api_key,
+            azure_endpoint=azure_openai_endpoint,
+            api_version=azure_openai_api_version,
+        )
+        print("Initialized Azure OpenAI Client")
+    elif openai_api_key:
+        openai_client = AsyncOpenAI(api_key=openai_api_key)
+    else:
+        openai_client = AsyncOpenAI() # Will try to fall back to ENV implicitly
+except Exception as e:
+    client_kind = "Azure OpenAI" if USE_AZURE_OPENAI else "OpenAI"
+    print(f"Warning: Could not initialize {client_kind} Client: {e}")
+    openai_client = None
 
 
 
